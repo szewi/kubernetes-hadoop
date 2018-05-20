@@ -1,0 +1,6 @@
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>HDFS_REPLICATION</value>
+    </property>
+</configuration>
