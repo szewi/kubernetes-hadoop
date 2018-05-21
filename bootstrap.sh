@@ -27,16 +27,21 @@ elif [[ "${NODE_TYPE}" == "datanode" ]]; then
   echo "Node type is set to: ${NODE_TYPE}" > /opt/bootstrap_log
 elif [[ "${NODE_TYPE}" == "namenode" ]]; then
   echo "Node type is set to: ${NODE_TYPE}" > /opt/bootstrap_log
-  sed -i '/localhost/d' /opt/hadoop/etc/hadoop/workers
+  sed -i '/localhost/d' /opt/hadoop/etc/hadoop/slaves
   if [ ! -z "${DATANODE_COUNT}" ]; then
     for ((i=0;i<${DATANODE_COUNT};i++)); do
-      echo "datanode-${i}.${DOMAIN_SUFFIX}" >> /opt/hadoop/etc/hadoop/workers
+      echo "datanode-${i}.${DOMAIN_SUFFIX}" >> /opt/hadoop/etc/hadoop/slaves
     done
   fi
-  cat /opt/hadoop/etc/hadoop/workers >> /opt/bootstrap_log
-  cat /opt/hadoop/etc/hadoop/workers | xargs -L1 -I {} rsync -avhe "ssh -o StrictHostKeyChecking=no" /opt/hadoop/etc/hadoop/ {}:/opt/hadoop/etc/hadoop/
+  cat /opt/hadoop/etc/hadoop/slaves >> /opt/bootstrap_log
+  ssh-keyscan $HOSTNAME >> ~/.ssh/known_hosts
+  ssh-keyscan 0.0.0.0 >> ~/.ssh/known_hosts
+  
+  cat /opt/hadoop/etc/hadoop/slaves | xargs -L1 -I {} /bin/bash -c "while ! ping -c1 {} &>> /opt/bootstrap_log; do sleep 5;done"
+
+  cat /opt/hadoop/etc/hadoop/slaves | xargs -L1 -I {} rsync -avhe "ssh -o StrictHostKeyChecking=no" /opt/hadoop/etc/hadoop/ {}:/opt/hadoop/etc/hadoop/
   NAME_NODE_HOST=$(grep namenode /etc/hosts)
-  cat /opt/hadoop/etc/hadoop/workers | xargs -L1 -I {} ssh -o StrictHostKeyChecking=no {} "echo $NAME_NODE_HOST >> /etc/hosts"
+  cat /opt/hadoop/etc/hadoop/slaves | xargs -L1 -I {} ssh -o StrictHostKeyChecking=no {} "echo $NAME_NODE_HOST >> /etc/hosts"
   ${HADOOP_HOME}/sbin/start-dfs.sh
 else
   echo "Not supported node type" > /opt/bootstrap_log

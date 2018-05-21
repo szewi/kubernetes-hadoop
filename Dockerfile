@@ -14,14 +14,14 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-RUN apt-get update && apt-get install -y rsync openssh-server && \
+RUN apt-get update && apt-get install -y vim iputils-ping rsync openssh-server && \
   ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
   cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
   chmod 600 ~/.ssh/authorized_keys 
 
-RUN cd /opt && wget -q http://www-eu.apache.org/dist/hadoop/common/hadoop-3.0.2/hadoop-3.0.2.tar.gz && \
-  tar -xzf hadoop-3.0.2.tar.gz && rm -f hadoop-3.0.2.tar.gz && \
-  ln -s hadoop-3.0.2 hadoop
+RUN cd /opt && wget -q https://archive.apache.org/dist/hadoop/core/hadoop-2.7.1/hadoop-2.7.1.tar.gz && \
+  tar -xzf hadoop-2.7.1.tar.gz && rm -f hadoop-2.7.1.tar.gz && \
+  ln -s hadoop-2.7.1 hadoop
 
 ENV HADOOP_HOME="/opt/hadoop"
 ENV PATH=$PATH:$HADOOP_HOME/bin
@@ -30,6 +30,10 @@ ENV HADOOP_MAPRED_HOME=${HADOOP_HOME}
 ENV HADOOP_COMMON_HOME=${HADOOP_HOME}
 ENV HADOOP_HDFS_HOME=${HADOOP_HOME}
 ENV YARN_HOME=${HADOOP_HOME}
+ENV HADOOP_PREFIX=${HADOOP_HOME}
+
+ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+ENV YARN_CONF_DIR=${HADOOP_HOME}/etc/hadoop
 
 ENV HDFS_NAMENODE_USER=root
 ENV HDFS_DATANODE_USER=root
@@ -37,7 +41,7 @@ ENV HDFS_SECONDARYNAMENODE_USER=root
 
 ENV HDFS_REPLICATION=1
 
-RUN sed -i "s,^# export JAVA_HOME=,export JAVA_HOME=$JAVA_HOME,g" /opt/hadoop/etc/hadoop/hadoop-env.sh
+RUN sed -i "s,^export JAVA_HOME=\${JAVA_HOME},export JAVA_HOME=/usr/lib/jvm/java-8-oracle,g" /opt/hadoop/etc/hadoop/hadoop-env.sh
 
 ADD core-site.xml.template /opt/templates/
 ADD hdfs-site.xml.template /opt/templates/
